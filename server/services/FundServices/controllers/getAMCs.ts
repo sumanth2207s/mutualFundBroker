@@ -4,7 +4,13 @@ import { rapidApiService } from "../services/rapidApi";
 
 export const getAMCs = async (req: Request, res: Response): Promise<any> => {
   try {
-    let amcs = await prisma.aMC.findMany();
+    let amcs = await prisma.aMC.findMany(
+      {
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }
+    );
 
     if (amcs.length === 0) {
       const masterData = await rapidApiService.getMasterData("CAMS");

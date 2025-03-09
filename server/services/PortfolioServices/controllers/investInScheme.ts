@@ -26,7 +26,7 @@ export const investInScheme = async (req: Request, res: Response): Promise<any> 
       
       let latestNav = scheme.nav;
       if (navData) {
-        latestNav = parseFloat(navData.NAV);
+        latestNav = parseFloat(navData.Net_Asset_Value);
         
         if (scheme.nav !== latestNav) {
           await prisma.scheme.update({

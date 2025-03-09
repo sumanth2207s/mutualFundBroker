@@ -24,10 +24,10 @@ export const getSchemeDetails = async (req: Request, res: Response): Promise<any
       }
   
       const latestNavData = await rapidApiService.getLatestNav();
-      const navData: any = rapidApiService.getNavForScheme(schemeCode, latestNavData);
+      const navData = await rapidApiService.getNavForScheme(schemeCode, latestNavData);
       
       if (navData) {
-        const latestNav = parseFloat(navData.NAV);
+        const latestNav = parseFloat(navData.Net_Asset_Value);
         const navDate = new Date(navData.Date);
         
         if (scheme.nav !== latestNav || scheme.lastUpdated.getTime() !== navDate.getTime()) {

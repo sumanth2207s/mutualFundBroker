@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { prisma } from "../../../shared/dB/prismaConnect";
 import { rapidApiService } from "../services/rapidApi";
 
-export const getOpenEndedSchemes = async (req: Request, res: Response): Promise<any> => {
+export const getOpenEndedSchemes = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { amcUuid } = req.params;
 
@@ -22,13 +25,13 @@ export const getOpenEndedSchemes = async (req: Request, res: Response): Promise<
       const masterData = await rapidApiService.getMasterData("CAMS");
       const latestNavData = await rapidApiService.getLatestNav();
 
-      const amcSchemes: any = rapidApiService.filterSchemesByAMC(
+      const amcSchemes = await rapidApiService.filterSchemesByAMC(
         masterData,
         amc.name
       );
 
       for (const scheme of amcSchemes) {
-        const navData: any = rapidApiService.getNavForScheme(
+        const navData = await rapidApiService.getNavForScheme(
           scheme.Scheme_Code,
           latestNavData
         );
@@ -39,7 +42,7 @@ export const getOpenEndedSchemes = async (req: Request, res: Response): Promise<
               schemeCode: scheme.Scheme_Code,
               schemeName: scheme.Scheme_Name,
               schemeType: "Open",
-              nav: parseFloat(navData.NAV),
+              nav: parseFloat(navData.Net_Asset_Value),
               lastUpdated: new Date(navData.Date),
               amcUUid: amcUuid,
             },

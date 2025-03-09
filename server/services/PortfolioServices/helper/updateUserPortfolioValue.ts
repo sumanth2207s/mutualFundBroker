@@ -21,7 +21,7 @@ export const updateUserPortfolioValue = async (userUuid: string) => {
       const navData = await rapidApiService.getNavForScheme(investment.scheme.schemeCode, latestNavData);
       
       if (navData) {
-        const latestNav = parseFloat(navData.NAV);
+        const latestNav = parseFloat(navData.Net_Asset_Value);
         
         if (investment.scheme.nav !== latestNav) {
           await prisma.scheme.update({
