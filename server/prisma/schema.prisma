@@ -14,10 +14,66 @@ datasource db {
 }
 
 model User {
+  uuid           String    @id @default(uuid())
+  email          String    @unique
+  password       String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
+  deletedAt      DateTime?
+  portfolioValue Float     @default(0)
+
+  Investment Investment[]
+}
+
+model AMC {
   uuid      String    @id @default(uuid())
-  email     String    @unique
-  password  String
+  name      String    @unique
+  code      String?   @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
   deletedAt DateTime?
+
+  Scheme Scheme[]
+}
+
+model Scheme {
+  uuid        String    @id @default(uuid())
+  schemeCode  String    @unique
+  schemeName  String
+  schemeType  String    @default("Open")
+  nav         Float
+  lastUpdated DateTime
+  amcUUid     String
+  amc         AMC       @relation(fields: [amcUUid], references: [uuid])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+  deletedAt   DateTime?
+
+  Investment Investment[]
+  NavHistory NavHistory[]
+}
+
+model Investment {
+  uuid       String    @id @default(uuid())
+  userUuid   String
+  schemeUuid String
+  units      Float
+  buyNav     Float
+  buyDate    DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+  deletedAt  DateTime?
+  user       User      @relation(fields: [userUuid], references: [uuid])
+  scheme     Scheme    @relation(fields: [schemeUuid], references: [uuid])
+}
+
+model NavHistory {
+  uuid       String    @id @default(uuid())
+  schemeUuid String
+  scheme     Scheme    @relation(fields: [schemeUuid], references: [uuid])
+  nav        Float
+  date       DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+  deletedAt  DateTime?
 }
