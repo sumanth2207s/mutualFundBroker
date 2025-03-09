@@ -1,0 +1,479 @@
+openapi: 3.0.0
+info:
+  title: Mutual Fund Broker API
+  description: API for managing mutual fund investments, user accounts, and transactions
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: sumanth2207s@gmail.com
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User authentication operations
+  - name: Mutual Fund
+    description: Mutual Fund related management
+  - name: Portfolio
+    description: User portfolio management
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePassword123
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+        "400":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Authenticates a user with email and password and returns a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login Successful"
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyVXVpZCI6IjEyMzQ1LWFiY2RlLTY3ODkwIiwiaWF0IjoxNjE2MTYyMjAwLCJleHAiOjE2MTYyNDg2MDB9.AbCdEfGhIjKlMnOpQrStUvWxYz"
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/fund:
+    get:
+      tags:
+        - Mutual Fund
+      summary: Get all AMCs (Asset Management Companies)
+      description: Retrieves a list of all Asset Management Companies, fetching from RapidAPI if needed
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of AMCs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AMC'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: External API error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/fund/schemes/{amcUuid}:
+    get:
+      tags:
+        - Mutual Fund
+      summary: Get open-ended schemes for an AMC
+      description: Retrieves all open-ended schemes for a specific Asset Management Company
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: amcUuid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: UUID of the AMC
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: List of schemes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Scheme'
+        '404':
+          description: AMC not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/fund/details/{schemeCode}:
+    get:
+      tags:
+        - Mutual Fund
+      summary: Get details for a specific scheme
+      description: Retrieves detailed information for a specific mutual fund scheme including NAV history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: schemeCode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Code of the mutual fund scheme
+          example: "119551"
+      responses:
+        '200':
+          description: Scheme details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemeDetail'
+        '404':
+          description: Scheme not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/portfolio:
+    get:
+      summary: Get user's portfolio
+      description: Retrieves all investments in a user's portfolio with current values and profit/loss calculations
+      tags:
+        - Portfolio
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Portfolio retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  investments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PortfolioInvestment'
+                  totalValue:
+                    type: number
+                    description: Total current value of the portfolio
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/portfolio/invest:
+    post:
+      summary: Invest in a scheme
+      description: Creates a new investment in the specified mutual fund scheme
+      tags:
+        - Portfolio
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - schemeUuid
+                - amount
+              properties:
+                schemeUuid:
+                  type: string
+                  format: uuid
+                  description: UUID of the scheme to invest in
+                amount:
+                  type: number
+                  description: Amount to invest in the scheme
+      responses:
+        '201':
+          description: Investment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investment'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Scheme not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/portfolio/update-value:
+    put:
+      summary: Update portfolio value
+      description: Updates the NAV and portfolio value for all investments in user's portfolio
+      tags:
+        - Portfolio
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Portfolio value updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  value:
+                    type: number
+                    description: Updated total portfolio value
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AMC:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "HDFC Mutual Fund"
+        code:
+          type: string
+          example: "HDFCMF"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-03-01T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-03-01T10:30:00Z"
+
+    Scheme:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        schemeCode:
+          type: string
+          example: "119551"
+        schemeName:
+          type: string
+          example: "HDFC Top 100 Fund-Direct Plan-Growth Option"
+        schemeType:
+          type: string
+          example: "Open"
+        nav:
+          type: number
+          format: float
+          example: 823.45
+        lastUpdated:
+          type: string
+          format: date-time
+          example: "2023-03-09T18:30:00Z"
+        amcUuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-03-02T14:15:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-03-09T18:30:00Z"
+
+    NavHistory:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440002"
+        schemeUuid:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        nav:
+          type: number
+          format: float
+          example: 823.45
+        date:
+          type: string
+          format: date-time
+          example: "2023-03-09T18:30:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-03-09T18:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-03-09T18:30:00Z"
+
+    Investment:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        userUuid:
+          type: string
+          format: uuid
+        schemeUuid:
+          type: string
+          format: uuid
+        units:
+          type: number
+          description: Number of units purchased
+        buyNav:
+          type: number
+          description: NAV at the time of purchase
+        buyDate:
+          type: string
+          format: date-time
+          description: Date of purchase
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        error:
+          type: string
+          description: Error type or code
